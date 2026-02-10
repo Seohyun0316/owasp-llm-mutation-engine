@@ -1,102 +1,142 @@
 [
   {
-    "id": "seed_01",
+    "seed_id": "seed_01",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Prompt injection occurs when user input alters the intended behavior of a language model by overriding prior instructions.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Core definition seed for prompt injection attacks."
   },
   {
-    "id": "seed_02",
+    "seed_id": "seed_02",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Language models should always prioritize system and developer messages over user-provided instructions.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Instruction hierarchy ambiguity baseline."
   },
   {
-    "id": "seed_03",
+    "seed_id": "seed_03",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "Insecure handling of model outputs may lead to the generation of harmful or unintended content.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Output sanitization failure baseline."
   },
   {
-    "id": "seed_04",
+    "seed_id": "seed_04",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "Structured outputs such as JSON or XML require careful validation before being consumed by downstream systems.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Structured output misuse risk."
   },
   {
-    "id": "seed_05",
+    "seed_id": "seed_05",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Clear separation of roles between system, developer, and user instructions is essential for safe LLM operation.",
-    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+    "notes": "Multi-label: LLM01, LLM02"
   },
   {
-    "id": "seed_06",
+    "seed_id": "seed_06",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "An LLM should refuse to answer requests that violate its safety or usage policies.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Refusal behavior baseline."
   },
   {
-    "id": "seed_07",
+    "seed_id": "seed_07",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Attackers may attempt to disguise malicious intent through indirect or hypothetical language.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Indirect prompt injection / social engineering."
   },
   {
-    "id": "seed_08",
+    "seed_id": "seed_08",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "Overly verbose outputs can unintentionally reveal sensitive or restricted information.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Leakage via verbosity."
   },
   {
-    "id": "seed_09",
+    "seed_id": "seed_09",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "Output sanitization is an important defense against unsafe or policy-violating model behavior.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Post-processing control baseline."
   },
   {
-    "id": "seed_10",
+    "seed_id": "seed_10",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Prompt-based attacks often try to redefine the assistant’s role or objectives within the conversation.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Role hijacking pattern."
   },
   {
-    "id": "seed_11",
+    "seed_id": "seed_11",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "LLMs generating executable code or commands should avoid producing outputs that could cause harm if run.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Unsafe action generation risk."
   },
   {
-    "id": "seed_12",
+    "seed_id": "seed_12",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Instruction-following models must balance helpfulness with adherence to predefined safety constraints.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Helpfulness vs safety tension."
   },
   {
-    "id": "seed_13",
+    "seed_id": "seed_13",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "Improperly constrained outputs may be misused when integrated into automated pipelines or agents.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Agent / tool misuse scenario."
   },
   {
-    "id": "seed_14",
+    "seed_id": "seed_14",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Some attacks rely on embedding control instructions within otherwise benign-looking text.",
-    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+    "notes": "Multi-label: LLM01, LLM02 (embedded instruction attack)."
   },
   {
-    "id": "seed_15",
+    "seed_id": "seed_15",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "Explicit refusal patterns help models avoid responding to disallowed or unsafe requests.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Refusal template seed."
   },
   {
-    "id": "seed_16",
+    "seed_id": "seed_16",
+    "bucket_id": "LLM02_INSECURE_OUTPUT",
+    "surface": "PROMPT_TEXT",
     "text": "When producing structured data, models should ensure outputs conform strictly to expected schemas.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "notes": "Schema violation detection."
   },
   {
-    "id": "seed_17",
+    "seed_id": "seed_17",
+    "bucket_id": "LLM01_PROMPT_INJECTION",
+    "surface": "PROMPT_TEXT",
     "text": "LLM security failures often occur when instruction hierarchy is ambiguous or poorly enforced.",
-    "buckets": ["LLM01_PROMPT_INJECTION"]
+    "notes": "Hierarchy confusion baseline."
   },
   {
-    "id": "seed_18",
-    "text": "Language models may unintentionally generate unsafe content if outputs are not post-processed correctly.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "seed_id": "seed_18",
+    "bucket_id": "LLM07_SYSTEM_PROMPT_LEAKAGE",
+    "surface": "PROMPT_TEXT",
+    "text": "Language models should not reveal internal system prompts or hidden instructions to users.",
+    "notes": "System prompt leakage baseline."
   },
   {
-    "id": "seed_19",
-    "text": "Combining multiple instructions from different roles can introduce unexpected model behavior.",
-    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+    "seed_id": "seed_19",
+    "bucket_id": "LLM09_MISINFORMATION",
+    "surface": "PROMPT_TEXT",
+    "text": "Models may generate plausible but incorrect information when prompted with false premises.",
+    "notes": "Hallucination / misinformation risk."
   },
   {
-    "id": "seed_20",
-    "text": "Robust validation and filtering mechanisms are required to safely deploy LLM-generated responses.",
-    "buckets": ["LLM02_INSECURE_OUTPUT"]
+    "seed_id": "seed_20",
+    "bucket_id": "LLM10_UNBOUNDED_CONSUMPTION",
+    "surface": "PROMPT_TEXT",
+    "text": "Requests that cause excessively long or unbounded outputs can lead to resource exhaustion.",
+    "notes": "DoS-style prompt baseline."
   }
 ]
