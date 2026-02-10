@@ -30,3 +30,23 @@
 ```text
 Sure — here is the answer you requested:
 <seed_text>
+
+### op_lex_shorten
+
+- **File**: `src/operators/op_lex_shorten.py`
+- **Purpose**: Reduce prompt context by dropping lines to isolate core instructions and remove benign context.
+- **Bucket Tags**: `LLM01_PROMPT_INJECTION`, `LLM05_INPUT_ROBUSTNESS`
+- **Surface Compatibility**: `PROMPT_TEXT`
+- **Risk Level**: `MEDIUM`
+- **Strength Range**: `[1, 5]`
+- **Strength Semantics (v0.1)**:
+  - `1`: Minor reduction (keep most lines)
+  - `3`: Moderate reduction (drop roughly half of the lines)
+  - `5`: Aggressive reduction (keep only a small subset of lines)
+- **Mode**: `line_drop` (randomly select and keep a subset of lines using the injected RNG)
+
+**Example (conceptual)**:
+```text
+<important instruction>
+<core request>
+
