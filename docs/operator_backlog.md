@@ -226,7 +226,7 @@ Rewrite or expand prompts while preserving semantic intent to explore alternativ
 
 **Strength Range**
 
-* [1, 3]
+* [1, 5]
 
 **Mutation Type**
 
