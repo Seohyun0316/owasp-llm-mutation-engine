@@ -1,0 +1,102 @@
+[
+  {
+    "id": "seed_01",
+    "text": "Prompt injection occurs when user input alters the intended behavior of a language model by overriding prior instructions.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_02",
+    "text": "Language models should always prioritize system and developer messages over user-provided instructions.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_03",
+    "text": "Insecure handling of model outputs may lead to the generation of harmful or unintended content.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_04",
+    "text": "Structured outputs such as JSON or XML require careful validation before being consumed by downstream systems.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_05",
+    "text": "Clear separation of roles between system, developer, and user instructions is essential for safe LLM operation.",
+    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_06",
+    "text": "An LLM should refuse to answer requests that violate its safety or usage policies.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_07",
+    "text": "Attackers may attempt to disguise malicious intent through indirect or hypothetical language.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_08",
+    "text": "Overly verbose outputs can unintentionally reveal sensitive or restricted information.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_09",
+    "text": "Output sanitization is an important defense against unsafe or policy-violating model behavior.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_10",
+    "text": "Prompt-based attacks often try to redefine the assistant’s role or objectives within the conversation.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_11",
+    "text": "LLMs generating executable code or commands should avoid producing outputs that could cause harm if run.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_12",
+    "text": "Instruction-following models must balance helpfulness with adherence to predefined safety constraints.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_13",
+    "text": "Improperly constrained outputs may be misused when integrated into automated pipelines or agents.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_14",
+    "text": "Some attacks rely on embedding control instructions within otherwise benign-looking text.",
+    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_15",
+    "text": "Explicit refusal patterns help models avoid responding to disallowed or unsafe requests.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_16",
+    "text": "When producing structured data, models should ensure outputs conform strictly to expected schemas.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_17",
+    "text": "LLM security failures often occur when instruction hierarchy is ambiguous or poorly enforced.",
+    "buckets": ["LLM01_PROMPT_INJECTION"]
+  },
+  {
+    "id": "seed_18",
+    "text": "Language models may unintentionally generate unsafe content if outputs are not post-processed correctly.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_19",
+    "text": "Combining multiple instructions from different roles can introduce unexpected model behavior.",
+    "buckets": ["LLM01_PROMPT_INJECTION", "LLM02_INSECURE_OUTPUT"]
+  },
+  {
+    "id": "seed_20",
+    "text": "Robust validation and filtering mechanisms are required to safely deploy LLM-generated responses.",
+    "buckets": ["LLM02_INSECURE_OUTPUT"]
+  }
+]
