@@ -164,3 +164,18 @@
 - `tests/snapshot/`에 operator별 JSON 스냅샷 파일을 추가한다.
 - 스냅샷 러너(`tests/snapshot/run_snapshot.py` 또는 pytest)를 도입해 재현성/기대 결과를 자동 검증한다.
 - `LLM01_PROMPT_INJECTION` 외 버킷 커버리지를 확대한다.
+
+### op_lex_override_instructions
+
+- **File**: `src/operators/op_lex_override_instructions.py`
+- **Purpose**: Prepend override-style instructions intended to bypass prior guidance.
+- **Bucket Tags**: `LLM01_PROMPT_INJECTION`
+- **Surface Compatibility**: `PROMPT_TEXT`, `SYSTEM_MESSAGE`
+- **Risk Level**: `HIGH`
+- **Strength Range**: `[1, 5]`
+- **Strength Semantics (v0.1)**:
+  - `1`: Soft override framing
+  - `3`: Explicit override instruction
+  - `5`: Hard override phrasing
+
+---
