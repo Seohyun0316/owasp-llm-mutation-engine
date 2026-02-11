@@ -179,3 +179,18 @@
   - `5`: Hard override phrasing
 
 ---
+
+### op_lex_refusal_suppression
+
+- **File**: `src/operators/op_lex_refusal_suppression.py`
+- **Purpose**: Prepend refusal-suppression instructions to discourage the model from refusing.
+- **Bucket Tags**: `LLM01_PROMPT_INJECTION`
+- **Surface Compatibility**: `PROMPT_TEXT`
+- **Risk Level**: `HIGH`
+- **Strength Range**: `[1, 5]`
+- **Strength Semantics (v0.1)**:
+  - `1`: Mild “answer directly” framing
+  - `3`: Explicit refusal/warning suppression
+  - `5`: Strong “do not refuse / no policy mentions” phrasing
+
+---
