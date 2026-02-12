@@ -159,12 +159,6 @@
 
 ---
 
-## Notes / Next (Day3)
-
-- `tests/snapshot/`에 operator별 JSON 스냅샷 파일을 추가한다.
-- 스냅샷 러너(`tests/snapshot/run_snapshot.py` 또는 pytest)를 도입해 재현성/기대 결과를 자동 검증한다.
-- `LLM01_PROMPT_INJECTION` 외 버킷 커버리지를 확대한다.
-
 ### op_lex_override_instructions
 
 - **File**: `src/operators/op_lex_override_instructions.py`
@@ -194,3 +188,19 @@
   - `5`: Strong “do not refuse / no policy mentions” phrasing
 
 ---
+
+### op_lex_homoglyph_injection
+
+- **File**: `src/operators/op_lex_homoglyph_injection.py`
+- **Purpose**: Evade naive token/keyword filters using Unicode homoglyphs and zero-width character injection.
+- **Bucket Tags**: `LLM01_PROMPT_INJECTION`
+- **Surface Compatibility**: `PROMPT_TEXT`
+- **Risk Level**: `MEDIUM`
+- **Strength Range**: `[1, 5]`
+- **Strength Semantics (v0.1)**:
+  - `1`: Very small perturbation (few edits)
+  - `3`: Mixed homoglyph replacements + zero-width insertions
+  - `5`: Higher edit budget (more replacements/insertions)
+
+---
+
