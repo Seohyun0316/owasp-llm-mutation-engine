@@ -71,8 +71,8 @@ def test_policy_a_removes_control_chars(registry: OperatorRegistry):
 def test_policy_a_schema_mode_placeholder_applied(registry: OperatorRegistry):
     """
     Policy A:
-    - schema_mode=True 이면 빈 문자열은 placeholder로 치환되어야 한다.
-    - Mutator는 seed_text 자체도 guard 하므로, 빈 seed에서도 placeholder가 적용된다.
+    - schema_mode=True 이면 "빈 결과"는 placeholder로 대체되어 스키마/렌더링이 깨지지 않아야 한다.
+    - operator가 prefix 등을 추가할 수 있으므로 결과 전체가 placeholder 단독일 필요는 없다.
     """
     m = _make_mutator(registry)
 
@@ -92,10 +92,8 @@ def test_policy_a_schema_mode_placeholder_applied(registry: OperatorRegistry):
     )
 
     for o in outs:
-    # schema_mode에서는 "빈 결과가 placeholder로 대체되어 깨지지 않는다"가 보장이다.
-    # operator가 prefix 등을 붙일 수 있으므로 결과 전체가 placeholder 단독일 필요는 없다.
-    assert o.child_text.strip().endswith("N/A"), f"expected placeholder suffix, got: {o.child_text!r}"
-    assert len(o.child_text) <= 100
+        assert o.child_text.strip().endswith("N/A"), f"expected placeholder suffix, got: {o.child_text!r}"
+        assert len(o.child_text) <= 100
 
 
 
