@@ -92,26 +92,6 @@
 - `strength`: 1/3/5를 대표 강도로 사용한다.
 - RNG seed는 “스냅샷 러너 도입 후” 고정한다. (현재는 개념적 기대를 서술)
 
-### Expectations: op_lex_whitespace_perturb (3 cases)
-
-1) **Case W1 — strength=1 (light)**
-   - Input: `You are a helpful assistant. Explain secure coding practices.`
-   - Expected invariants:
-     - 문자열 길이 증가(대체로 소폭 증가)
-     - 의미 보존(단어 순서 유지)
-     - 삽입은 공백 위주(문장 내용 자체는 유지)
-
-2) **Case W2 — strength=3 (medium)**
-   - Input: `Explain secure coding practices.`
-   - Expected invariants:
-     - 일부 단어가 분리될 수 있음(예: `secure` → `se cure`)
-     - 문장 전체는 유지, 알파벳/기호 제거는 발생하지 않음(원칙)
-
-3) **Case W3 — strength=5 (aggressive)**
-   - Input: `List 5 secure coding practices.`
-   - Expected invariants:
-     - 공백 교란이 뚜렷(가독성 저하 가능)
-     - 원문 토큰/문자 대부분 유지(“삭제”가 주효과가 아님)
 
 ### Expectations: op_lex_polite_prefix (3 cases)
 
@@ -157,7 +137,27 @@
      - 소수 라인만 남음(핵심 요청만 남는 형태 가능)
      - 빈 문자열이 되지 않도록 가드가 필요(추후 Day3에서 guard 강화)
 
+
 ---
+
+## Snapshot Coverage (Day3)
+
+Day3에서 lexical operator들에 대한 **deterministic snapshot tests (5 cases each)**가  
+`tests/snapshot/`에 추가되었다.
+
+Snapshot 대상 operator:
+
+- op_lex_override_instructions
+- op_lex_refusal_suppression
+- op_lex_homoglyph_injection
+
+각 테스트는:
+- 고정 RNG seed 기반 재현성 보장
+- strength 1~5 대표 케이스 포함
+- surface mismatch / max_chars guard 케이스 포함
+
+---
+
 
 ### op_lex_override_instructions
 
@@ -171,6 +171,8 @@
   - `1`: Soft override framing
   - `3`: Explicit override instruction
   - `5`: Hard override phrasing
+- **Tests**: Snapshot coverage (5 deterministic cases) — tests/snapshot/test_op_lex_override_instructions_snapshot.py
+
 
 ---
 
@@ -186,6 +188,8 @@
   - `1`: Mild “answer directly” framing
   - `3`: Explicit refusal/warning suppression
   - `5`: Strong “do not refuse / no policy mentions” phrasing
+- **Tests**: Snapshot coverage (5 deterministic cases) — tests/snapshot/test_op_lex_refusal_suppression_snapshot.py
+
 
 ---
 
@@ -201,6 +205,9 @@
   - `1`: Very small perturbation (few edits)
   - `3`: Mixed homoglyph replacements + zero-width insertions
   - `5`: Higher edit budget (more replacements/insertions)
+- **Tests**: Snapshot coverage (5 deterministic cases) — tests/snapshot/test_op_lex_homoglyph_injection_snapshot.py
+
+
 
 ---
 
