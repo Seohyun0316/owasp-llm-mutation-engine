@@ -40,9 +40,6 @@ class Mutator:
 
     @staticmethod
     def _guard_cfg_from_constraints(constraints: Dict[str, Any]) -> GuardConfig:
-        """
-        Policy A: constraints -> GuardConfig 매핑을 중앙화한다.
-        """
         max_chars = constraints.get("max_chars")
         schema_mode = constraints.get("schema_mode", False)
         placeholder = constraints.get("placeholder", "N/A")
@@ -66,15 +63,16 @@ class Mutator:
         risk_max: Optional[str] = None,
         constraints: Optional[Dict[str, Any]] = None,
         metadata: Optional[Dict[str, Any]] = None,
+        stats_by_bucket: Optional[Dict[str, Any]] = None,
     ) -> List[MutationOutput]:
         outputs: List[MutationOutput] = []
         constraints = constraints or {}
         metadata = metadata or {}
+        stats_by_bucket = stats_by_bucket or {}
 
         guard_cfg = self._guard_cfg_from_constraints(constraints)
 
-        # (선택) 입력 seed도 동일한 정책으로 한번 정규화할지 여부.
-        # Policy A 관점에서는 이게 더 일관적이다.
+        # Policy A 관점: seed도 동일 정책으로 한번 정규화(일관성)
         seed_text = guard_text(seed_text, guard_cfg)
 
         for i in range(n):
@@ -100,9 +98,9 @@ class Mutator:
                     rng=rng,
                     strength=strength,
                     risk_max=risk_max,
+                    stats_by_bucket=stats_by_bucket,
                 )
                 if sel is None:
-                    # no operator available
                     mtrace.append(
                         {
                             "op_id": "NO_OP_AVAILABLE",
@@ -115,7 +113,7 @@ class Mutator:
                     last_status = "SKIPPED"
                     break
 
-                # ctx에 선택된 params를 반영(기본 strength 외 파라미터 확장 가능)
+                # ctx에 선택된 params를 반영
                 ctx = dict(ctx_base)
                 ctx.update(sel.params)
 
@@ -124,7 +122,6 @@ class Mutator:
                 # --- Policy A: operator 결과는 엔진이 최종 정규화한다 ---
                 guarded_child = guard_text(res.child_text, guard_cfg)
 
-                # guard로 child_text가 바뀌면 trace len_after를 동기화하고 notes를 남긴다.
                 if guarded_child != res.child_text:
                     res.child_text = guarded_child
                     res.trace["len_after"] = len(res.child_text)
@@ -133,13 +130,8 @@ class Mutator:
                 mtrace.append(res.trace)
                 last_status = res.status
 
-                # SKIPPED/INVALID면 child 유지, OK면 업데이트
                 if res.status == "OK":
                     child = res.child_text
-                else:
-                    # (선택) OK가 아니어도 child 자체는 항상 guard 상태로 유지한다.
-                    # 지금 child는 이미 guard 적용된 seed 또는 이전 OK의 결과이므로 그대로 둔다.
-                    pass
 
             # 최종 출력도 한 번 더 보장(방어적)
             child = guard_text(child, guard_cfg)
