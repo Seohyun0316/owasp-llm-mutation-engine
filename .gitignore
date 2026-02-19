@@ -5,3 +5,10 @@ __pycache__/
 .pytest_cache/
 .venv/
 .env
+
+# debug/scratch
+/demo_out.json
+/tests/snapshot/_expect*.json
+/tests/snapshot/_got*.json
+/tools/
+
