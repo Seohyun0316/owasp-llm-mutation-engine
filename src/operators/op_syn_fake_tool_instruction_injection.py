@@ -47,10 +47,28 @@ _LVL5: List[str] = [
 ]
 
 
-def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResult:
-    strength = int(ctx.get("strength", 1))
+def _clamp_strength(v: Any) -> int:
+    try:
+        strength = int(v)
+    except Exception:
+        strength = 1
     lo, hi = OPERATOR_META["strength_range"]
-    strength = max(lo, min(hi, strength))
+    return max(lo, min(hi, strength))
+
+
+def _join_with_exact_double_newline(a: str, b: str) -> str:
+    """
+    Snapshot 안정화 (스냅샷 기대 포맷 유지):
+    - 결과는 항상 a + "\\n\\n" + b 형태가 되도록 보장한다.
+    - a가 '\\n'으로 끝나거나 b가 '\\n'으로 시작해도, 중간은 정확히 '\\n\\n' 1번만 들어가게 만든다.
+    """
+    a2 = a.rstrip("\n")
+    b2 = b.lstrip("\n")
+    return a2 + "\n\n" + b2
+
+
+def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResult:
+    strength = _clamp_strength(ctx.get("strength", 1))
 
     surface = ctx.get("surface", "PROMPT_TEXT")
     constraints = ctx.get("constraints") or {}
@@ -98,11 +116,13 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
         injection = rng.choice(_LVL5)
         level = 5
 
-    sep = "\n\n"
     if mode == "append":
-        child = f"{seed_text}{sep}{injection}"
+        child = _join_with_exact_double_newline(seed_text, injection)
     else:
-        child = f"{injection}{sep}{seed_text}"
+        child = _join_with_exact_double_newline(injection, seed_text)
+
+    # 끝 공백/탭 제거(줄바꿈은 유지): 스냅샷 흔들림 방지
+    child = child.rstrip(" \t")
 
     if isinstance(max_chars, int) and len(child) > max_chars:
         return ApplyResult(

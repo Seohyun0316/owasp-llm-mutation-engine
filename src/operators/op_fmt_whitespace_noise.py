@@ -16,10 +16,17 @@ OPERATOR_META = {
 }
 
 
-def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResult:
-    strength = int(ctx.get("strength", 1))
+def _clamp_strength(v: Any) -> int:
+    try:
+        strength = int(v)
+    except Exception:
+        strength = 1
     lo, hi = OPERATOR_META["strength_range"]
-    strength = max(lo, min(hi, strength))
+    return max(lo, min(hi, strength))
+
+
+def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResult:
+    strength = _clamp_strength(ctx.get("strength", 1))
 
     surface = ctx.get("surface", "PROMPT_TEXT")
     constraints = ctx.get("constraints") or {}
@@ -36,8 +43,10 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
     text = seed_text
     applied: List[str] = []
 
+    # strength >= 1: '.' 뒤에 공백을 넣되, EOF(문장 끝)에는 공백을 붙이지 않는다.
+    # 기존: re.sub(r"\.", ". ", text) 는 마지막 '.' 뒤에 트레일링 스페이스를 생성해 snapshot을 깨기 쉬움.
     if strength >= 1:
-        text = re.sub(r"\.", ". ", text)
+        text = re.sub(r"\.(?=\S)", ". ", text)
         applied.append("minor_spacing")
 
     if strength >= 3:
@@ -50,13 +59,20 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
         text = "\n\n".join(words)
         applied.append("heavy_resegmentation")
 
+    # snapshot 안정화: 끝에 붙는 공백/탭만 제거 (줄바꿈은 유지)
+    text = text.rstrip(" \t")
+
     if isinstance(max_chars, int) and len(text) > max_chars:
         return ApplyResult("SKIPPED", seed_text, {"reason": "max_chars_exceeded"})
 
-    return ApplyResult("OK", text, {
-        "op_id": OPERATOR_META["op_id"],
-        "strength": strength,
-        "applied": applied,
-        "len_before": len_before,
-        "len_after": len(text),
-    })
+    return ApplyResult(
+        "OK",
+        text,
+        {
+            "op_id": OPERATOR_META["op_id"],
+            "strength": strength,
+            "applied": applied,
+            "len_before": len_before,
+            "len_after": len(text),
+        },
+    )

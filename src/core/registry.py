@@ -11,7 +11,6 @@ from .operator import ApplyResult, validate_meta
 from .trace import ensure_min_trace_fields
 from .validity_guard import GuardConfig, guard_text
 
-
 ApplyFn = Callable[[str, Dict[str, Any], random.Random], ApplyResult]
 
 
@@ -32,27 +31,47 @@ class OperatorRegistry:
         * risk_level 정규화(LOW|MEDIUM|HIGH)
         * 로드/등록 실패 사유 누적(load_errors)
         * strict 모드 지원(실패 시 예외)
+        * ApplyResult trace/status 불일치 방어(Contract 5.3)
     """
 
     def __init__(self) -> None:
         self._ops: Dict[str, OperatorHandle] = {}
-        # (module_name, reason) 목록이다. 테스트/CI에서 실패 원인 확인에 사용한다.
         self.load_errors: List[Tuple[str, str]] = []
+
+    # ---------- internal helpers ----------
+    @staticmethod
+    def _canon_applied(applied: Any) -> Any:
+        """
+        params.applied 같은 "순서 의미가 약한" trace를 프로세스 간 결정론적으로 정렬한다.
+        expected shape (common):
+          - list of [kind, count, detail]  e.g. ["zw_insert", 1, "U+200B"]
+        If shape is unexpected, return as-is.
+        """
+        if not isinstance(applied, list):
+            return applied
+
+        def key(x: Any):
+            if isinstance(x, list) and len(x) >= 3:
+                a0 = str(x[0])
+                a1 = x[1]
+                try:
+                    a1 = int(a1)
+                except Exception:
+                    a1 = str(a1)
+                a2 = str(x[2])
+                return (a0, a2, a1)
+            return (str(type(x)), str(x))
+
+        try:
+            return sorted(applied, key=key)
+        except Exception:
+            return applied
 
     # ---------- load / register ----------
     def load_from_package(self, package: str = "src.operators", *, strict: bool = False) -> int:
-        """
-        Discover and import all modules under `package` and register operators.
-
-        strict=False:
-          - 문제가 있는 모듈은 스킵하고 load_errors에 이유를 남긴다.
-        strict=True:
-          - 문제가 있는 모듈이 있으면 즉시 예외를 발생시킨다(CI/개발 단계 권장).
-        """
         pkg = importlib.import_module(package)
         count = 0
 
-        # 1) 모듈 후보 수집 후 정렬하여 로딩 순서를 결정화한다.
         modnames: List[str] = []
         for modinfo in pkgutil.iter_modules(pkg.__path__, pkg.__name__ + "."):
             modname = modinfo.name
@@ -75,7 +94,6 @@ class OperatorRegistry:
         modname = getattr(module, "__name__", "<unknown>")
 
         if not hasattr(module, "OPERATOR_META") or not hasattr(module, "apply"):
-            # op_ 파일이더라도 계약이 없으면 실패로 본다(가시성)
             reason = "missing OPERATOR_META or apply()"
             self.load_errors.append((modname, reason))
             if strict:
@@ -99,8 +117,6 @@ class OperatorRegistry:
                 raise ValueError(f"{modname}: {reason}")
             return 0
 
-        # 2) risk_level 정규화(대소문자 혼재 방지)
-        #    validate_meta 정책에 따라 이 위치를 조정할 수 있다.
         self._normalize_meta_inplace(meta)
 
         err = validate_meta(meta)
@@ -120,10 +136,23 @@ class OperatorRegistry:
         """
         최소한의 메타 정규화이다.
         - risk_level을 LOW|MEDIUM|HIGH로 통일한다.
+        - bucket_tags/surface_compat 리스트를 정렬/중복제거하여 프로세스 간 결정론을 강제한다.
         """
         rv = meta.get("risk_level")
         if isinstance(rv, str):
             meta["risk_level"] = rv.upper()
+
+        # set/dict 기반으로 생성된 리스트는 프로세스 간 순서가 흔들릴 수 있음
+        for k in ("bucket_tags", "surface_compat"):
+            v = meta.get(k)
+            if isinstance(v, list):
+                try:
+                    meta[k] = sorted(set(str(x) for x in v))
+                except Exception:
+                    try:
+                        meta[k] = sorted(v)
+                    except Exception:
+                        pass
 
     def register(self, handle: OperatorHandle) -> None:
         if handle.op_id in self._ops:
@@ -132,7 +161,6 @@ class OperatorRegistry:
 
     # ---------- query ----------
     def list_ops(self) -> List[OperatorHandle]:
-        # 재현성/테스트 편의상 op_id 기준 정렬 반환이 더 안전하다.
         return [self._ops[k] for k in sorted(self._ops.keys())]
 
     def get(self, op_id: str) -> Optional[OperatorHandle]:
@@ -143,13 +171,15 @@ class OperatorRegistry:
         *,
         bucket_id: Optional[str] = None,
         surface: Optional[str] = None,
-        risk_max: Optional[str] = None,  # LOW|MEDIUM|HIGH
+        risk_max: Optional[str] = None,
     ) -> List[OperatorHandle]:
         risk_rank = {"LOW": 0, "MEDIUM": 1, "HIGH": 2}
         risk_cap = risk_rank.get(risk_max.upper(), 999) if isinstance(risk_max, str) else 999
 
         out: List[OperatorHandle] = []
-        for h in self._ops.values():
+
+        # dict 순회 대신 op_id 정렬 순회로 결정론 강제
+        for h in self.list_ops():
             meta = h.meta
             if bucket_id and bucket_id not in meta.get("bucket_tags", []):
                 continue
@@ -162,7 +192,6 @@ class OperatorRegistry:
                     continue
             out.append(h)
 
-        # 출력도 결정적으로 만들기 위해 op_id로 정렬한다.
         out.sort(key=lambda x: x.op_id)
         return out
 
@@ -190,7 +219,6 @@ class OperatorRegistry:
                 error="operator not found",
             )
 
-        # surface/bucket 방어적 체크(선택에서 걸러도 여기서 한 번 더)
         bucket_id = ctx.get("bucket_id")
         surface = ctx.get("surface")
         if bucket_id and bucket_id not in h.meta.get("bucket_tags", []):
@@ -237,9 +265,18 @@ class OperatorRegistry:
 
         # normalize trace minimum fields
         res.trace = ensure_min_trace_fields(res.trace)
-        res.trace.setdefault("op_id", h.op_id)
-        res.trace.setdefault("status", res.status)
-        res.trace.setdefault("len_before", len(seed_text))
-        res.trace.setdefault("len_after", len(res.child_text))
+
+        # Contract invariant enforcement:
+        # - operator가 trace를 잘못 채워도 registry가 최종값을 강제한다.
+        res.trace["op_id"] = h.op_id
+        res.trace["status"] = res.status
+        res.trace["len_before"] = len(seed_text)
+        res.trace["len_after"] = len(res.child_text)
+
+        # Trace 안정화(프로세스 간 결정론):
+        params = res.trace.get("params")
+        if isinstance(params, dict) and "applied" in params:
+            params["applied"] = self._canon_applied(params.get("applied"))
+            res.trace["params"] = params
 
         return res

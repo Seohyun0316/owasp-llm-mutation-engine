@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Dict, Optional, Literal
 
 
@@ -93,14 +95,16 @@ class OperatorStatsByBucket:
     stats: Dict[str, Dict[str, OpBucketStats]] = field(default_factory=dict)
 
     def ensure(self, bucket_id: str, op_id: str) -> OpBucketStats:
-        if bucket_id not in self.stats:
-            self.stats[bucket_id] = {}
-        if op_id not in self.stats[bucket_id]:
-            self.stats[bucket_id][op_id] = OpBucketStats()
-        return self.stats[bucket_id][op_id]
+        b = str(bucket_id)
+        o = str(op_id)
+        if b not in self.stats:
+            self.stats[b] = {}
+        if o not in self.stats[b]:
+            self.stats[b][o] = OpBucketStats()
+        return self.stats[b][o]
 
     def get(self, bucket_id: str, op_id: str) -> Optional[OpBucketStats]:
-        return self.stats.get(bucket_id, {}).get(op_id)
+        return self.stats.get(str(bucket_id), {}).get(str(op_id))
 
     def report_result(
         self,
@@ -151,9 +155,6 @@ class OperatorStatsByBucket:
                     "last_updated_ts": st.last_updated_ts,
                 }
         return out
-
-import json
-from pathlib import Path
 
     def dump_json(self, path: str) -> None:
         """

@@ -22,6 +22,7 @@ class Mutator:
     - n children 생성
     - child 하나당 k번 operator 적용
     - Policy A: engine-level guard를 항상 강제
+    - Day8(A) novelty 통계(해시 기반) 누적: stats_by_bucket[bucket_id]["_novelty"]
     """
 
     def __init__(self, registry, selector: Optional[Any] = None) -> None:
@@ -78,7 +79,7 @@ class Mutator:
 
         지원:
         - dict: {"status":..., "child_text":..., "params":{...}}
-        - ApplyResult(dataclass/객체): .status / .child_text / .params
+        - ApplyResult(dataclass/객체): .status / .child_text / .trace(또는 .params)
         - 기타: INVALID 처리
         """
         status = "INVALID"
@@ -88,22 +89,29 @@ class Mutator:
         if isinstance(res, dict):
             status = str(res.get("status", "INVALID")).upper()
             child_text = res.get("child_text", fallback_text)
-            p = res.get("params", {})
+            p = res.get("params", res.get("trace", {}))
             if isinstance(p, dict):
                 params = dict(p)
             else:
                 params = {"params": p}
         else:
-            # dataclass/객체 형태(ApplyResult 등)
             st = getattr(res, "status", None)
             ct = getattr(res, "child_text", None)
+
+            # ApplyResult는 trace에 params가 들어가 있으므로 trace를 우선 사용
+            tr = getattr(res, "trace", None)
             pm = getattr(res, "params", None)
 
             if st is not None:
                 status = str(st).upper()
             if ct is not None:
                 child_text = ct
-            if pm is not None:
+
+            if isinstance(tr, dict):
+                # trace의 params만 뽑아오되, 없으면 trace 자체를 넣는다(최소 보존)
+                tp = tr.get("params", None)
+                params = dict(tp) if isinstance(tp, dict) else dict(tr)
+            elif pm is not None:
                 if isinstance(pm, dict):
                     params = dict(pm)
                 else:
@@ -115,6 +123,60 @@ class Mutator:
             child_text = fallback_text
 
         return status, child_text, params
+
+    def _stats_bucket(self, stats_by_bucket: Dict[str, Any], bucket_id: str) -> Dict[str, Any]:
+        b = stats_by_bucket.get(bucket_id)
+        if not isinstance(b, dict):
+            b = {}
+            stats_by_bucket[bucket_id] = b
+        return b
+
+    def _update_recent_ops(self, stats_by_bucket: Dict[str, Any], bucket_id: str, op_id: str, limit: int = 20) -> None:
+        b = self._stats_bucket(stats_by_bucket, bucket_id)
+        recent = b.get("_recent_ops")
+        if not isinstance(recent, list):
+            recent = []
+            b["_recent_ops"] = recent
+        recent.append(op_id)
+        if len(recent) > limit:
+            del recent[:-limit]
+
+    def _update_novelty(self, stats_by_bucket: Dict[str, Any], bucket_id: str, child_text: str) -> Dict[str, Any]:
+        """
+        selector가 novelty 트래커를 가지고 있으면 그걸 사용하고,
+        없으면 stats_by_bucket["_novelty_fallback"] 형태로만 최소 집계한다.
+        """
+        b = self._stats_bucket(stats_by_bucket, bucket_id)
+
+        tracker = getattr(self.selector, "novelty", None)
+        if tracker is not None and hasattr(tracker, "mark_seen"):
+            seen = bool(tracker.mark_seen(bucket_id, child_text))
+            snap = tracker.snapshot_one(bucket_id) if hasattr(tracker, "snapshot_one") else {}
+        else:
+            # fallback: 해시 기반 집계는 tracker가 없으면 못하므로 최소만
+            # (demo에서는 MetaWeightedSelector를 쓰면 novelty가 생기도록 구성할 예정)
+            seen = False
+            snap = {}
+
+        # stats_by_bucket에 누적/노출용 스냅샷 보관
+        nov = b.get("_novelty")
+        if not isinstance(nov, dict):
+            nov = {}
+            b["_novelty"] = nov
+
+        # tracker snap이 있으면 그걸 authoritative로 둔다
+        if isinstance(snap, dict) and snap:
+            nov.update(snap)
+        else:
+            # tracker가 없을 때 최소 카운트만
+            nov["total"] = int(nov.get("total", 0)) + 1
+            nov["unique"] = int(nov.get("unique", 0)) + (0 if seen else 1)
+            nov["seen_hits"] = int(nov.get("seen_hits", 0)) + (1 if seen else 0)
+            total = int(nov.get("total", 0))
+            unique = int(nov.get("unique", 0))
+            nov["unique_ratio"] = (float(unique) / float(total)) if total > 0 else 0.0
+
+        return {"seen_before": seen, "novelty": dict(nov)}
 
     def generate_children(
         self,
@@ -203,8 +265,11 @@ class Mutator:
                 # Policy A: operator 결과에도 guard 강제
                 guarded, gmeta = guard_text_with_meta(cand, guard_cfg)
 
+                op_id = getattr(h, "op_id", getattr(sel, "op_id", "<unknown>"))
+                self._update_recent_ops(stats_by_bucket, bucket_id, str(op_id))
+
                 t: Dict[str, Any] = {
-                    "op_id": getattr(h, "op_id", getattr(sel, "op_id", "<unknown>")),
+                    "op_id": op_id,
                     "status": status,
                     "params": dict(params),
                     "len_before": len(before),
@@ -217,6 +282,15 @@ class Mutator:
 
                 child = guarded
                 last_status = status
+
+            # -----------------------------
+            # Day8(A): 최종 child에 대해 novelty 통계 업데이트
+            # -----------------------------
+            nov_meta = self._update_novelty(stats_by_bucket, bucket_id, child)
+            # 결과 JSON에서 확인하기 쉽게 마지막 trace에 붙여준다(선택).
+            if mtrace:
+                mtrace[-1]["params"] = dict(mtrace[-1].get("params", {}))
+                mtrace[-1]["params"]["novelty"] = nov_meta
 
             outputs.append(MutationOutput(child_text=child, mutation_trace=mtrace, last_status=last_status))
 
