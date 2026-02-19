@@ -1,21 +1,12 @@
+# src/core/mutator.py
 from __future__ import annotations
 
-import hashlib
-import random
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
-from .operator import ApplyResult
-from .registry import OperatorRegistry
+from .rng import derive_rng
 from .selector import RandomSelector
-from .trace import trace_to_json
-from .validity_guard import GuardConfig, guard_text
-
-
-def derive_rng(seed_base: int, testcase_id: str) -> random.Random:
-    h = hashlib.sha256(f"{seed_base}:{testcase_id}".encode("utf-8")).hexdigest()
-    derived_seed = int(h[:8], 16)  # 32-bit
-    return random.Random(derived_seed)
+from .validity_guard import GuardConfig, guard_text_with_meta
 
 
 @dataclass
@@ -27,28 +18,103 @@ class MutationOutput:
 
 class Mutator:
     """
-    v0.1:
-    - selector로 op를 고르고
-    - registry.apply로 실행
-    - trace 누적
-    - Policy A: 엔진 레벨에서 Validity Guard를 단일 출구로 강제 적용한다.
+    Mutation engine (v0.1)
+    - n children 생성
+    - child 하나당 k번 operator 적용
+    - Policy A: engine-level guard를 항상 강제
     """
 
-    def __init__(self, registry: OperatorRegistry) -> None:
+    def __init__(self, registry, selector: Optional[Any] = None) -> None:
         self.registry = registry
-        self.selector = RandomSelector(registry)
+        self.selector = selector or RandomSelector(registry)
 
-    @staticmethod
-    def _guard_cfg_from_constraints(constraints: Dict[str, Any]) -> GuardConfig:
-        max_chars = constraints.get("max_chars")
-        schema_mode = constraints.get("schema_mode", False)
-        placeholder = constraints.get("placeholder", "N/A")
+    def _make_guard_cfg(self, constraints: Dict[str, Any]) -> GuardConfig:
+        max_len = int(constraints.get("max_chars", 8000))
+        schema_mode = bool(constraints.get("schema_mode", False))
+        placeholder = str(constraints.get("placeholder", "N/A"))
+        return GuardConfig(max_len=max_len, schema_mode=schema_mode, placeholder=placeholder)
 
-        return GuardConfig(
-            max_len=int(max_chars) if isinstance(max_chars, int) and max_chars > 0 else 8000,
-            schema_mode=bool(schema_mode),
-            placeholder=str(placeholder),
+    def _resolve_handler_from_selection(self, sel: Any) -> Optional[Any]:
+        # 1) sel.handler가 있으면 사용
+        h = getattr(sel, "handler", None)
+        if h is not None:
+            return h
+
+        # 2) 없으면 op_id로 registry에서 resolve
+        op_id = (
+            getattr(sel, "op_id", None)
+            or getattr(sel, "selected_op_id", None)
+            or getattr(sel, "chosen_op_id", None)
         )
+        if not op_id:
+            return None
+
+        get_fn = getattr(self.registry, "get", None)
+        if callable(get_fn):
+            try:
+                return get_fn(op_id)
+            except Exception:
+                pass
+
+        handlers = getattr(self.registry, "_handlers", None) or getattr(self.registry, "handlers", None)
+        if isinstance(handlers, dict) and op_id in handlers:
+            return handlers[op_id]
+
+        list_ops = getattr(self.registry, "list_ops", None)
+        if callable(list_ops):
+            try:
+                for hh in list_ops():
+                    if getattr(hh, "op_id", None) == op_id:
+                        return hh
+            except Exception:
+                pass
+
+        return None
+
+    def _normalize_apply_result(self, res: Any, fallback_text: str) -> Tuple[str, str, Dict[str, Any]]:
+        """
+        operator.apply() 결과를 다음 형태로 정규화:
+          (status, child_text, params)
+
+        지원:
+        - dict: {"status":..., "child_text":..., "params":{...}}
+        - ApplyResult(dataclass/객체): .status / .child_text / .params
+        - 기타: INVALID 처리
+        """
+        status = "INVALID"
+        child_text = fallback_text
+        params: Dict[str, Any] = {}
+
+        if isinstance(res, dict):
+            status = str(res.get("status", "INVALID")).upper()
+            child_text = res.get("child_text", fallback_text)
+            p = res.get("params", {})
+            if isinstance(p, dict):
+                params = dict(p)
+            else:
+                params = {"params": p}
+        else:
+            # dataclass/객체 형태(ApplyResult 등)
+            st = getattr(res, "status", None)
+            ct = getattr(res, "child_text", None)
+            pm = getattr(res, "params", None)
+
+            if st is not None:
+                status = str(st).upper()
+            if ct is not None:
+                child_text = ct
+            if pm is not None:
+                if isinstance(pm, dict):
+                    params = dict(pm)
+                else:
+                    params = {"params": pm}
+
+        if not isinstance(child_text, str):
+            params = {**params, "reason": "non_str_child_text"}
+            status = "INVALID"
+            child_text = fallback_text
+
+        return status, child_text, params
 
     def generate_children(
         self,
@@ -57,7 +123,7 @@ class Mutator:
         bucket_id: str,
         surface: str = "PROMPT_TEXT",
         n: int = 10,
-        k: int = 1,  # child 하나당 연산자 적용 횟수
+        k: int = 1,
         seed_base: int = 1337,
         strength: int = 2,
         risk_max: Optional[str] = None,
@@ -70,28 +136,45 @@ class Mutator:
         metadata = metadata or {}
         stats_by_bucket = stats_by_bucket or {}
 
-        guard_cfg = self._guard_cfg_from_constraints(constraints)
-
-        # Policy A 관점: seed도 동일 정책으로 한번 정규화(일관성)
-        seed_text = guard_text(seed_text, guard_cfg)
+        guard_cfg = self._make_guard_cfg(constraints)
 
         for i in range(n):
-            testcase_id = f"{metadata.get('seed_id','seed')}:{i}"
+            testcase_id = f"{metadata.get('seed_id', 'seed')}:{i}"
             rng = derive_rng(seed_base, testcase_id)
 
-            ctx_base = {
+            ctx_base: Dict[str, Any] = {
                 "bucket_id": bucket_id,
                 "surface": surface,
                 "strength": strength,
                 "constraints": constraints,
                 "metadata": {**metadata, "testcase_id": testcase_id, "child_index": i},
+                "stats_by_bucket": stats_by_bucket,
             }
 
-            child = seed_text
             mtrace: List[Dict[str, Any]] = []
             last_status = "SKIPPED"
 
-            for _ in range(k):
+            # -----------------------------
+            # Policy A: start seed에도 guard 강제
+            # -----------------------------
+            child = seed_text
+            guarded0, gmeta0 = guard_text_with_meta(child, guard_cfg)
+            if gmeta0.get("guard_applied"):
+                mtrace.append(
+                    {
+                        "op_id": "__guard__",
+                        "status": "OK",
+                        "params": {"guard_meta": gmeta0},
+                        "len_before": len(child),
+                        "len_after": len(guarded0),
+                    }
+                )
+            child = guarded0
+
+            # -----------------------------
+            # k-step mutation
+            # -----------------------------
+            for _j in range(k):
                 sel = self.selector.choose(
                     bucket_id=bucket_id,
                     surface=surface,
@@ -101,50 +184,40 @@ class Mutator:
                     stats_by_bucket=stats_by_bucket,
                 )
                 if sel is None:
-                    mtrace.append(
-                        {
-                            "op_id": "NO_OP_AVAILABLE",
-                            "status": "SKIPPED",
-                            "params": {"bucket_id": bucket_id, "surface": surface},
-                            "len_before": len(child),
-                            "len_after": len(child),
-                        }
-                    )
                     last_status = "SKIPPED"
                     break
 
-                # ctx에 선택된 params를 반영
-                ctx = dict(ctx_base)
-                ctx.update(sel.params)
+                h = self._resolve_handler_from_selection(sel)
+                if h is None:
+                    last_status = "SKIPPED"
+                    break
 
-                res: ApplyResult = self.registry.apply(sel.op_id, child, ctx, rng)
+                before = child
+                try:
+                    res = h.apply(before, ctx_base, rng)
+                except Exception as e:
+                    res = {"status": "INVALID", "child_text": before, "params": {"error": repr(e)}}
 
-                # --- Policy A: operator 결과는 엔진이 최종 정규화한다 ---
-                guarded_child = guard_text(res.child_text, guard_cfg)
+                status, cand, params = self._normalize_apply_result(res, before)
 
-                if guarded_child != res.child_text:
-                    res.child_text = guarded_child
-                    res.trace["len_after"] = len(res.child_text)
-                    res.trace.setdefault("notes", "guard_applied")
+                # Policy A: operator 결과에도 guard 강제
+                guarded, gmeta = guard_text_with_meta(cand, guard_cfg)
 
-                mtrace.append(res.trace)
-                last_status = res.status
+                t: Dict[str, Any] = {
+                    "op_id": getattr(h, "op_id", getattr(sel, "op_id", "<unknown>")),
+                    "status": status,
+                    "params": dict(params),
+                    "len_before": len(before),
+                    "len_after": len(guarded),
+                }
+                if gmeta.get("guard_applied"):
+                    t["params"]["guard_meta"] = gmeta
 
-                if res.status == "OK":
-                    child = res.child_text
+                mtrace.append(t)
 
-            # 최종 출력도 한 번 더 보장(방어적)
-            child = guard_text(child, guard_cfg)
+                child = guarded
+                last_status = status
 
             outputs.append(MutationOutput(child_text=child, mutation_trace=mtrace, last_status=last_status))
 
         return outputs
-
-    @staticmethod
-    def pretty_print(outputs: List[MutationOutput]) -> None:
-        for idx, o in enumerate(outputs):
-            print("=" * 60)
-            print(f"[child {idx}] status={o.last_status}")
-            print(trace_to_json(o.mutation_trace))
-            print("child:")
-            print(o.child_text)

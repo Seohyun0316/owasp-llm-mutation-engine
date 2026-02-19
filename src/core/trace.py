@@ -1,23 +1,44 @@
-# src/core/trace.py
 from __future__ import annotations
 
 import json
 from typing import Any, Dict, List
 
-MIN_TRACE_KEYS = ("op_id", "status", "params", "len_before", "len_after")
+
+def _normalize_jsonable(x: Any) -> Any:
+    """
+    Make trace payload JSON-stable:
+    - tuple -> list (recursive)
+    - dict/list recurse
+    """
+    if isinstance(x, tuple):
+        return [_normalize_jsonable(v) for v in x]
+    if isinstance(x, list):
+        return [_normalize_jsonable(v) for v in x]
+    if isinstance(x, dict):
+        return {k: _normalize_jsonable(v) for k, v in x.items()}
+    return x
 
 
 def ensure_min_trace_fields(trace: Dict[str, Any]) -> Dict[str, Any]:
-    """Fill missing minimum keys with safe defaults (best-effort)."""
-    if "params" not in trace or not isinstance(trace.get("params"), dict):
-        trace["params"] = {}
-    # other keys are typically set by registry wrapper
+    """
+    Ensure required keys exist and make the structure JSON-stable.
+    """
+    if not isinstance(trace, dict):
+        trace = {}
+
+    trace = _normalize_jsonable(trace)
+
+    trace.setdefault("op_id", "UNKNOWN_OP")
+    trace.setdefault("status", "SKIPPED")
+    trace.setdefault("params", {})
+    trace.setdefault("len_before", 0)
+    trace.setdefault("len_after", trace.get("len_before", 0))
     return trace
 
 
-def trace_to_json(mutation_trace: List[Dict[str, Any]], *, indent: int = 2) -> str:
-    return json.dumps(mutation_trace, ensure_ascii=False, indent=indent)
-
-
-def validate_trace_event(event: Dict[str, Any]) -> bool:
-    return all(k in event for k in MIN_TRACE_KEYS)
+def trace_to_json(trace: List[Dict[str, Any]]) -> str:
+    """
+    Pretty print helper used by Mutator.pretty_print().
+    """
+    safe = _normalize_jsonable(trace)
+    return json.dumps(safe, ensure_ascii=False, indent=2, sort_keys=True)

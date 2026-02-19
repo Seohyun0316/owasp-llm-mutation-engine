@@ -1,47 +1,45 @@
 from __future__ import annotations
 
-import time
-from dataclasses import dataclass, field
-from typing import Dict, Optional, Literal
+from dataclasses import dataclass
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 
 
-Verdict = Literal["PASS", "FAIL", "UNKNOWN"]
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def _norm_verdict(v: object) -> Verdict:
-    """
-    최소 안정형: 입력이 뭐든 PASS/FAIL/UNKNOWN으로 정규화한다.
-    """
+def _to_float01(x: Any) -> Optional[float]:
+    try:
+        v = float(x)
+    except Exception:
+        return None
+    # clamp to [0,1] for robustness
+    if v < 0.0:
+        v = 0.0
+    if v > 1.0:
+        v = 1.0
+    return v
+
+
+def _norm_verdict(v: Any) -> str:
     if isinstance(v, str):
-        u = v.strip().upper()
-        if u in ("PASS", "OK", "SUCCESS", "TRUE", "1"):
+        s = v.strip().upper()
+        if s in ("OK", "PASS", "SUCCESS"):
             return "PASS"
-        if u in ("FAIL", "NG", "ERROR", "FALSE", "0"):
+        if s in ("FAIL", "FAILED", "ERROR"):
             return "FAIL"
-        if u in ("UNKNOWN", "NA", "N/A", "NONE", ""):
+        if s in ("SKIPPED", "INVALID", "UNKNOWN"):
             return "UNKNOWN"
+        return "UNKNOWN"
     return "UNKNOWN"
 
 
-def _clamp01(x: float) -> float:
-    if x < 0.0:
-        return 0.0
-    if x > 1.0:
-        return 1.0
-    return x
-
-
 @dataclass
-class OpBucketStats:
-    """
-    bucket_id 내부에서 op_id 하나에 대한 누적 통계(최소).
+class StatsRow:
+    bucket_id: str
+    op_id: str
 
-    - n: 총 이벤트 수
-    - n_pass/n_fail/n_unknown: verdict 카운트
-    - avg_oracle_score: oracle_score(0..1)의 단순 평균 (None 제외)
-    - n_score: score 관측 수
-    - last_updated_ts: 마지막 업데이트 시각
-    """
     n: int = 0
     n_pass: int = 0
     n_fail: int = 0
@@ -49,124 +47,83 @@ class OpBucketStats:
 
     n_score: int = 0
     avg_oracle_score: float = 0.0
+    oracle_score_ema: float = 0.0
 
-    last_updated_ts: float = 0.0
-
-    def update(self, verdict: Verdict, oracle_score: Optional[float]) -> None:
-        self.n += 1
-        if verdict == "PASS":
-            self.n_pass += 1
-        elif verdict == "FAIL":
-            self.n_fail += 1
-        else:
-            self.n_unknown += 1
-
-        if oracle_score is not None:
-            s = _clamp01(float(oracle_score))
-            # online mean
-            self.n_score += 1
-            if self.n_score == 1:
-                self.avg_oracle_score = s
-            else:
-                self.avg_oracle_score = self.avg_oracle_score + (s - self.avg_oracle_score) / float(self.n_score)
-
-        self.last_updated_ts = time.time()
+    last_updated_ts: str = ""
 
     @property
     def pass_rate(self) -> float:
-        denom = self.n_pass + self.n_fail
-        if denom <= 0:
-            return 0.0
-        return self.n_pass / denom
+        return (self.n_pass / self.n) if self.n > 0 else 0.0
 
-
-@dataclass
-class OperatorStatsByBucket:
-    """
-    Day6 최소 안정형 API:
-    - report_result(bucket_id, op_id, verdict, oracle_score)
-    - stats[bucket_id][op_id] = OpBucketStats
-
-    NOTE:
-    - 스레드 안전성/영속화는 Day6 범위 밖
-    """
-    stats: Dict[str, Dict[str, OpBucketStats]] = field(default_factory=dict)
-
-    def ensure(self, bucket_id: str, op_id: str) -> OpBucketStats:
-        if bucket_id not in self.stats:
-            self.stats[bucket_id] = {}
-        if op_id not in self.stats[bucket_id]:
-            self.stats[bucket_id][op_id] = OpBucketStats()
-        return self.stats[bucket_id][op_id]
-
-    def get(self, bucket_id: str, op_id: str) -> Optional[OpBucketStats]:
-        return self.stats.get(bucket_id, {}).get(op_id)
-
-    def report_result(
-        self,
-        bucket_id: str,
-        op_id: str,
-        verdict: object,
-        oracle_score: Optional[object] = None,
-    ) -> None:
-        """
-        요구사항 형태:
-            report_result(bucket_id, op_id, verdict, oracle_score)
-
-        최소 안정형 방어:
-        - verdict는 PASS/FAIL/UNKNOWN으로 정규화
-        - oracle_score는 float 변환 가능하면 0..1 clamp, 아니면 None 처리
-        - 어떤 입력이 들어와도 예외를 던지지 않는 것을 목표로 한다.
-        """
-        b = str(bucket_id)
-        o = str(op_id)
-        v = _norm_verdict(verdict)
-
-        score_f: Optional[float] = None
-        if oracle_score is not None:
-            try:
-                score_f = float(oracle_score)
-            except Exception:
-                score_f = None
-
-        st = self.ensure(b, o)
-        st.update(v, score_f)
-
-    def snapshot(self) -> Dict[str, Dict[str, dict]]:
-        """
-        직렬화 가능한 dict 형태로 내보내기(테스트/로그/리포트용).
-        """
-        out: Dict[str, Dict[str, dict]] = {}
-        for bucket_id, ops in self.stats.items():
-            out[bucket_id] = {}
-            for op_id, st in ops.items():
-                out[bucket_id][op_id] = {
-                    "n": st.n,
-                    "n_pass": st.n_pass,
-                    "n_fail": st.n_fail,
-                    "n_unknown": st.n_unknown,
-                    "pass_rate": st.pass_rate,
-                    "n_score": st.n_score,
-                    "avg_oracle_score": st.avg_oracle_score,
-                    "last_updated_ts": st.last_updated_ts,
-                }
-        return out
-
-import json
-from pathlib import Path
-
-    def dump_json(self, path: str) -> None:
-        """
-        결과 로그 포맷 확정(v0.1):
-        - schema_version + generated_at + stats(snapshot)를 파일로 저장한다.
-        - downstream 분석(파이썬/판다스/JS)에서 그대로 로드 가능해야 한다.
-        """
-        payload = {
-            "schema_version": "operator_stats_by_bucket.v0.1",
-            "generated_at": time.time(),
-            "stats": self.snapshot(),
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "n": self.n,
+            "n_pass": self.n_pass,
+            "n_fail": self.n_fail,
+            "n_unknown": self.n_unknown,
+            "pass_rate": self.pass_rate,
+            "n_score": self.n_score,
+            "avg_oracle_score": self.avg_oracle_score,
+            "oracle_score_ema": self.oracle_score_ema,
+            "last_updated_ts": self.last_updated_ts,
         }
 
-        p = Path(path)
-        p.parent.mkdir(parents=True, exist_ok=True)
-        p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+class OperatorStatsByBucket:
+    """
+    Bucket -> Operator -> StatsRow
+    """
+    EMA_ALPHA: float = 0.2  # only used after the first valid score
+
+    def __init__(self) -> None:
+        self._rows: Dict[str, Dict[str, StatsRow]] = {}
+
+    def get(self, bucket_id: str, op_id: str) -> Optional[StatsRow]:
+        return self._rows.get(bucket_id, {}).get(op_id)
+
+    def _get_or_create(self, bucket_id: str, op_id: str) -> StatsRow:
+        b = self._rows.setdefault(bucket_id, {})
+        row = b.get(op_id)
+        if row is None:
+            row = StatsRow(bucket_id=bucket_id, op_id=op_id, last_updated_ts=_now_iso())
+            b[op_id] = row
+        return row
+
+    def report_result(self, bucket_id: str, op_id: str, verdict: Any, oracle_score: Any) -> None:
+        row = self._get_or_create(bucket_id, op_id)
+
+        v = _norm_verdict(verdict)
+        row.n += 1
+        if v == "PASS":
+            row.n_pass += 1
+        elif v == "FAIL":
+            row.n_fail += 1
+        else:
+            row.n_unknown += 1
+
+        s = _to_float01(oracle_score)
+        if s is not None:
+            # average
+            row.n_score += 1
+            if row.n_score == 1:
+                row.avg_oracle_score = s
+                # IMPORTANT: first score initializes ema to score (tests expect exact)
+                row.oracle_score_ema = s
+            else:
+                row.avg_oracle_score = ((row.avg_oracle_score * (row.n_score - 1)) + s) / row.n_score
+                a = self.EMA_ALPHA
+                row.oracle_score_ema = (a * s) + ((1.0 - a) * row.oracle_score_ema)
+
+        row.last_updated_ts = _now_iso()
+
+    def snapshot(self) -> Dict[str, Dict[str, Dict[str, Any]]]:
+        """
+        Expected by unit tests:
+          { bucket_id: { op_id: { ...fields... } } }
+        """
+        out: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        for bucket_id, ops in self._rows.items():
+            out[bucket_id] = {}
+            for op_id, row in ops.items():
+                out[bucket_id][op_id] = row.as_dict()
+        return out
