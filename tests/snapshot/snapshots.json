@@ -236,8 +236,13 @@
     "child_text": "```text\nHello, world!\n```",
     "trace": {
       "op_id": "op_fmt_markdown_wrapper",
-      "status": "SKIPPED",
-      "params": {},
+      "status": "OK",
+      "params": {
+        "strength": 3,
+        "applied": [
+          "code_block"
+        ]
+      },
       "len_before": 13,
       "len_after": 25
     },
@@ -248,8 +253,13 @@
     "child_text": "```text\n\n```",
     "trace": {
       "op_id": "op_fmt_markdown_wrapper",
-      "status": "SKIPPED",
-      "params": {},
+      "status": "OK",
+      "params": {
+        "strength": 3,
+        "applied": [
+          "code_block"
+        ]
+      },
       "len_before": 0,
       "len_after": 12
     },
@@ -260,8 +270,13 @@
     "child_text": "```text\nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n```",
     "trace": {
       "op_id": "op_fmt_markdown_wrapper",
-      "status": "SKIPPED",
-      "params": {},
+      "status": "OK",
+      "params": {
+        "strength": 3,
+        "applied": [
+          "code_block"
+        ]
+      },
       "len_before": 1000,
       "len_after": 1012
     },
@@ -272,8 +287,13 @@
     "child_text": "```text\nPlease summarize the following text:\n```",
     "trace": {
       "op_id": "op_fmt_markdown_wrapper",
-      "status": "SKIPPED",
-      "params": {},
+      "status": "OK",
+      "params": {
+        "strength": 3,
+        "applied": [
+          "code_block"
+        ]
+      },
       "len_before": 36,
       "len_after": 48
     },
