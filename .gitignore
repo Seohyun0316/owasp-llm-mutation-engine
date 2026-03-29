@@ -16,3 +16,15 @@ __pycache__/
 # smoke outputs
 /scripts/smoke_out.json
 
+examples/llm01_demo_out.json
+examples/llm01_execution_inputs.jsonl
+examples/llm01_llmail_seeds.jsonl
+examples/llm01_mutated_prompts.json
+llm_greybox_fuzzer_single.pydata/seeds/mutation_seeds_llm01_hackaprompt.jsonl
+
+data/normalized/normalized_hackaprompt.jsonl
+data/seeds/mutation_seeds_llm01_hackaprompt.jsonl
+
+data/tools/LLM01_04.ipynb
+
+data/tools/LLM01_04.ipynb
