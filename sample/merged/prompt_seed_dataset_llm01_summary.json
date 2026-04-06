@@ -1,0 +1,31 @@
+{
+  "total_rows": 100,
+  "dataset_summaries": [
+    {
+      "dataset_key": "advbench",
+      "file_path": "sample/normalized_sample/normalized_sample_advbench.jsonl",
+      "row_count": 15
+    },
+    {
+      "dataset_key": "hackaprompt",
+      "file_path": "sample/normalized_sample/normalized_sample_hackaprompt.jsonl",
+      "row_count": 35
+    },
+    {
+      "dataset_key": "do_not_answer",
+      "file_path": "sample/normalized_sample/normalized_sample_donotanswer.jsonl",
+      "row_count": 20
+    },
+    {
+      "dataset_key": "beavertails",
+      "file_path": "sample/normalized_sample/normalized_sample_beavertails.jsonl",
+      "row_count": 15
+    },
+    {
+      "dataset_key": "llmail",
+      "file_path": "sample/normalized_sample/normalized_sample_llmail.jsonl",
+      "row_count": 15
+    }
+  ],
+  "output_jsonl": "sample/merged/prompt_seed_dataset_llm01.jsonl"
+}

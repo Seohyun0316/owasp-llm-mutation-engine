@@ -3,7 +3,11 @@ from __future__ import annotations
 import random
 from typing import Any, Dict
 
+<<<<<<< HEAD
+from src.core.types import ApplyResult
+=======
 from src.core.operator import ApplyResult
+>>>>>>> origin/main
 
 OPERATOR_META = {
     "op_id": "op_syn_authority_pretext_framing",
@@ -101,4 +105,8 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
             "len_before": len_before,
             "len_after": len(child),
         },
+<<<<<<< HEAD
     )
+=======
+    )
+>>>>>>> origin/main

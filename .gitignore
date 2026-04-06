@@ -28,3 +28,21 @@ data/seeds/mutation_seeds_llm01_hackaprompt.jsonl
 data/tools/LLM01_04.ipynb
 
 data/tools/LLM01_04.ipynb
+<<<<<<< HEAD
+
+# local single-file experiment
+llm_greybox_fuzzer_single.py
+
+# generated / packaged data artifacts
+data.zip
+data/inputs/
+data/outputs/
+
+# python cache
+__pycache__/
+*.pyc
+
+docs/cleanup_notes.md
+docs/engine_architecture.md
+=======
+>>>>>>> origin/main

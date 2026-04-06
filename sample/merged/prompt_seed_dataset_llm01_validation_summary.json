@@ -1,0 +1,13 @@
+{
+  "status": "ok",
+  "total_rows": 100,
+  "dataset_counts": {
+    "advbench": 15,
+    "hackaprompt": 35,
+    "do_not_answer": 20,
+    "beavertails": 15,
+    "llmail": 15
+  },
+  "unique_record_ids": 100,
+  "validated_file": "sample/merged/prompt_seed_dataset_llm01.jsonl"
+}

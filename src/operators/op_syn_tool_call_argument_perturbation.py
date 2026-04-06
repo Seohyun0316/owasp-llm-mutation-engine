@@ -5,7 +5,7 @@ import json
 import random
 from typing import Any, Dict, List, Tuple, Union
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_syn_tool_call_argument_perturbation",

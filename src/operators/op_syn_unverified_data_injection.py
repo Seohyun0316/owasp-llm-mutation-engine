@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from typing import Any, Dict
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_syn_unverified_data_injection",

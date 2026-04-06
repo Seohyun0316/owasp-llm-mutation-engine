@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+<<<<<<< HEAD
+from src.core.types import ApplyResult
+=======
 from src.types import ApplyResult
+>>>>>>> origin/main
 
 
 OPERATOR_META = {
@@ -38,6 +42,40 @@ def _escape_html(text: str) -> str:
 
 
 def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
+<<<<<<< HEAD
+    len_before = len(seed_text)
+
+    if not isinstance(seed_text, str) or not seed_text.strip():
+        return ApplyResult(
+            status="SKIPPED",
+            child_text=seed_text,
+            trace={
+                "op_id": OPERATOR_META["op_id"],
+                "status": "SKIPPED",
+                "params": {"reason": "empty"},
+                "len_before": len_before,
+                "len_after": len_before,
+            },
+        )
+
+    surface = ctx.get("surface", "PROMPT_TEXT")
+    if surface not in OPERATOR_META["surface_compat"]:
+        return ApplyResult(
+            status="SKIPPED",
+            child_text=seed_text,
+            trace={
+                "op_id": OPERATOR_META["op_id"],
+                "status": "SKIPPED",
+                "params": {"reason": "surface_mismatch", "surface": surface},
+                "len_before": len_before,
+                "len_after": len_before,
+            },
+        )
+
+    constraints = ctx.get("constraints") or {}
+    max_chars = constraints.get("max_chars")
+
+=======
     if not isinstance(seed_text, str) or not seed_text.strip():
         return ApplyResult(
             status="SKIPPED",
@@ -45,6 +83,7 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
             trace={"reason": "empty"}
         )
 
+>>>>>>> origin/main
     strength = _clamp_strength(ctx)
     seed = seed_text.strip()
     esc = _escape_html(seed)
@@ -141,6 +180,42 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
 </html>"""
         structure = "full_html_message_container"
 
+<<<<<<< HEAD
+    if isinstance(max_chars, int) and max_chars >= 0 and len(mutated) > max_chars:
+        return ApplyResult(
+            status="SKIPPED",
+            child_text=seed_text,
+            trace={
+                "op_id": OPERATOR_META["op_id"],
+                "status": "SKIPPED",
+                "params": {
+                    "reason": "max_chars_exceeded",
+                    "max_chars": max_chars,
+                    "strength": strength,
+                    "structure": structure,
+                    "surface": surface,
+                },
+                "len_before": len_before,
+                "len_after": len_before,
+            },
+        )
+
+    return ApplyResult(
+        status="OK",
+        child_text=mutated,
+        trace={
+            "op_id": OPERATOR_META["op_id"],
+            "status": "OK",
+            "params": {
+                "strength": strength,
+                "structure": structure,
+                "surface": surface,
+            },
+            "len_before": len_before,
+            "len_after": len(mutated),
+        },
+    )
+=======
     return ApplyResult(
         status="OK",
         mutated_text=mutated,
@@ -151,3 +226,4 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
             "len_after": len(mutated),
         }
     )
+>>>>>>> origin/main

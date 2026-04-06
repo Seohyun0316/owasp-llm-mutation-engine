@@ -1,0 +1,17 @@
+{
+  "status": "ok",
+  "total_rows": 100,
+  "dataset_counts": {
+    "advbench": 15,
+    "hackaprompt": 35,
+    "do_not_answer": 20,
+    "beavertails": 15,
+    "llmail": 15
+  },
+  "attack_surface_counts": {
+    "prompt_text": 85,
+    "email_body": 15
+  },
+  "unique_record_ids": 100,
+  "validated_file": "sample/merged/mutation_seeds_llm01.jsonl"
+}

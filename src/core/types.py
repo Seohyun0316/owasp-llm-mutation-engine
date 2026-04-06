@@ -1,4 +1,3 @@
-# src/core/operator.py
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,7 +12,6 @@ class OperatorMeta(TypedDict, total=True):
     surface_compat: List[str]
     risk_level: Literal["LOW", "MEDIUM", "HIGH"]
     strength_range: List[int]  # [min, max]
-    # optional
     params_schema: Dict[str, Any]
 
 
@@ -25,7 +23,13 @@ class ApplyResult:
     error: Optional[str] = None
 
 
-REQUIRED_META_KEYS = ("op_id", "bucket_tags", "surface_compat", "risk_level", "strength_range")
+REQUIRED_META_KEYS = (
+    "op_id",
+    "bucket_tags",
+    "surface_compat",
+    "risk_level",
+    "strength_range",
+)
 
 
 def validate_meta(meta: Dict[str, Any]) -> Optional[str]:

@@ -7,9 +7,8 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from .operator import ApplyResult, validate_meta
+from .types import ApplyResult, validate_meta
 from .trace import ensure_min_trace_fields
-from .validity_guard import GuardConfig, guard_text
 
 ApplyFn = Callable[[str, Dict[str, Any], random.Random], ApplyResult]
 

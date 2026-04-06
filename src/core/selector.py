@@ -5,8 +5,8 @@ import random
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
-from .operator_weights import weight_for
-from .novelty import NoveltyTracker
+from .selector_weights import weight_for
+from .novelty_tracker import NoveltyTracker
 from .registry import OperatorRegistry, OperatorHandle
 
 
