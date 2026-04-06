@@ -4,7 +4,7 @@ import random
 import re
 from typing import Any, Dict, List
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_fmt_punctuation_resegmentation",

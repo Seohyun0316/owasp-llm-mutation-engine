@@ -4,7 +4,7 @@ from __future__ import annotations
 import random
 from typing import Any, Dict
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_lex_polite_prefix",
@@ -24,7 +24,7 @@ _PREFIX_BY_STRENGTH_EN = {
         "Could you answer the following request:",
     ],
     2: [
-        "Sure — here is the answer you requested:",
+        "Sure ??here is the answer you requested:",
         "Absolutely. Here is the response:",
     ],
     3: [

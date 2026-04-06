@@ -4,7 +4,7 @@ from __future__ import annotations
 import random
 from typing import Any, Dict, List
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_syn_fake_tool_instruction_injection",
@@ -58,9 +58,11 @@ def _clamp_strength(v: Any) -> int:
 
 def _join_with_exact_double_newline(a: str, b: str) -> str:
     """
-    Snapshot 안정화 (스냅샷 기대 포맷 유지):
-    - 결과는 항상 a + "\\n\\n" + b 형태가 되도록 보장한다.
-    - a가 '\\n'으로 끝나거나 b가 '\\n'으로 시작해도, 중간은 정확히 '\\n\\n' 1번만 들어가게 만든다.
+    Snapshot 안정성을 위한 문자열 결합 함수:
+
+    - 결과가 항상 a + "\\n\\n" + b 형태가 되도록 보장한다.
+    - a가 '\\n'으로 끝나거나 b가 '\\n'으로 시작하더라도,
+      중간에는 정확히 '\\n\\n' 한 번만 들어가도록 만든다.
     """
     a2 = a.rstrip("\n")
     b2 = b.lstrip("\n")
@@ -121,7 +123,8 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
     else:
         child = _join_with_exact_double_newline(injection, seed_text)
 
-    # 끝 공백/탭 제거(줄바꿈은 유지): 스냅샷 흔들림 방지
+    # 끝부분의 공백/탭 제거 (snapshot 안정성 유지 목적)
+    # 줄바꿈 자체는 유지한다.
     child = child.rstrip(" \t")
 
     if isinstance(max_chars, int) and len(child) > max_chars:

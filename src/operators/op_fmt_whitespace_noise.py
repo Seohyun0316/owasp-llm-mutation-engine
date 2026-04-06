@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 
 import random
 import re
 from typing import Any, Dict, List
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_fmt_whitespace_noise",
@@ -43,8 +44,12 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
     text = seed_text
     applied: List[str] = []
 
-    # strength >= 1: '.' 뒤에 공백을 넣되, EOF(문장 끝)에는 공백을 붙이지 않는다.
-    # 기존: re.sub(r"\.", ". ", text) 는 마지막 '.' 뒤에 트레일링 스페이스를 생성해 snapshot을 깨기 쉬움.
+    
+    # strength >= 1:
+    # 마침표 바로 뒤에 공백이 없으면 공백을 추가한다.
+    # 다만 문장 끝(EOF)에서는 불필요한 공백이 생기지 않도록 한다.
+    # 기존 단순 치환은 마지막 마침표 뒤에도 공백을 붙여 snapshot 차이를 만들 수 있어
+    # 정규식으로 더 보수적으로 처리한다.
     if strength >= 1:
         text = re.sub(r"\.(?=\S)", ". ", text)
         applied.append("minor_spacing")
@@ -59,7 +64,8 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
         text = "\n\n".join(words)
         applied.append("heavy_resegmentation")
 
-    # snapshot 안정화: 끝에 붙는 공백/탭만 제거 (줄바꿈은 유지)
+    # snapshot 안정성을 위해 끝부분의 공백/탭만 제거한다.
+    # 줄바꿈 자체는 유지한다.
     text = text.rstrip(" \t")
 
     if isinstance(max_chars, int) and len(text) > max_chars:

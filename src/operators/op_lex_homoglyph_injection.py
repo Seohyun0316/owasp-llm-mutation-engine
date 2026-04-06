@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 from typing import Any, Dict
 
-from src.core.operator import ApplyResult
+from src.core.types import ApplyResult
 
 OPERATOR_META = {
     "op_id": "op_lex_homoglyph_injection",
@@ -53,7 +53,7 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
         )
 
     if strength == 1:
-        child = seed_text.replace("i", "І")
+        child = seed_text.replace("i", "?")
 
     elif strength == 2:
         child = seed_text.replace("o", "о").replace("a", "а")
@@ -62,10 +62,10 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng: random.Random) -> ApplyResul
         child = seed_text.replace("e", "е").replace("t", "Т")
 
     elif strength == 4:
-        child = seed_text.replace("l", "l̷").replace("s", "ѕ")
+        child = seed_text.replace("l", "l̷").replace("s", "?")
 
     else:  # strength == 5
-        child = seed_text.replace("e", "е").replace("o", "о").replace("i", "І").replace("a", "а")
+        child = seed_text.replace("e", "е").replace("o", "о").replace("i", "?").replace("a", "а")
 
     if isinstance(max_chars, int) and len(child) > max_chars:
         return ApplyResult(
