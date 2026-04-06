@@ -35,7 +35,6 @@ llm_greybox_fuzzer_single.py
 
 # generated / packaged data artifacts
 data.zip
-data/inputs/
 data/outputs/
 
 # python cache
