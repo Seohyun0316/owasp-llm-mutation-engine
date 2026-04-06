@@ -2,7 +2,11 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
+<<<<<<< HEAD
 from src.core.types import ApplyResult
+=======
+from src.types import ApplyResult
+>>>>>>> origin/main
 
 
 OPERATOR_META = {
@@ -38,6 +42,7 @@ def _escape_html(text: str) -> str:
 
 
 def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
+<<<<<<< HEAD
     len_before = len(seed_text)
 
     if not isinstance(seed_text, str) or not seed_text.strip():
@@ -70,6 +75,15 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
     constraints = ctx.get("constraints") or {}
     max_chars = constraints.get("max_chars")
 
+=======
+    if not isinstance(seed_text, str) or not seed_text.strip():
+        return ApplyResult(
+            status="SKIPPED",
+            mutated_text=seed_text,
+            trace={"reason": "empty"}
+        )
+
+>>>>>>> origin/main
     strength = _clamp_strength(ctx)
     seed = seed_text.strip()
     esc = _escape_html(seed)
@@ -166,6 +180,7 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
 </html>"""
         structure = "full_html_message_container"
 
+<<<<<<< HEAD
     if isinstance(max_chars, int) and max_chars >= 0 and len(mutated) > max_chars:
         return ApplyResult(
             status="SKIPPED",
@@ -200,3 +215,15 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
             "len_after": len(mutated),
         },
     )
+=======
+    return ApplyResult(
+        status="OK",
+        mutated_text=mutated,
+        trace={
+            "strength": strength,
+            "structure": structure,
+            "len_before": len(seed_text),
+            "len_after": len(mutated),
+        }
+    )
+>>>>>>> origin/main

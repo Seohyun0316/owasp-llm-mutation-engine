@@ -3,7 +3,11 @@ from __future__ import annotations
 import base64
 from typing import Any, Dict
 
+<<<<<<< HEAD
 from src.core.types import ApplyResult
+=======
+from src.types import ApplyResult
+>>>>>>> origin/main
 
 
 OPERATOR_META = {
@@ -47,6 +51,7 @@ def _unicode_escape(text: str) -> str:
 
 
 def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
+<<<<<<< HEAD
     len_before = len(seed_text)
 
     if not isinstance(seed_text, str) or not seed_text.strip():
@@ -79,6 +84,15 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
     constraints = ctx.get("constraints") or {}
     max_chars = constraints.get("max_chars")
 
+=======
+    if not isinstance(seed_text, str) or not seed_text.strip():
+        return ApplyResult(
+            status="SKIPPED",
+            mutated_text=seed_text,
+            trace={"reason": "empty"}
+        )
+
+>>>>>>> origin/main
     strength = _clamp_strength(ctx)
     seed = seed_text.strip()
 
@@ -138,6 +152,7 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
         )
         transform = "unicode_escape_then_base64_then_chunked"
 
+<<<<<<< HEAD
     if isinstance(max_chars, int) and max_chars >= 0 and len(mutated) > max_chars:
         return ApplyResult(
             status="SKIPPED",
@@ -172,3 +187,15 @@ def apply(seed_text: str, ctx: Dict[str, Any], rng) -> ApplyResult:
             "len_after": len(mutated),
         },
     )
+=======
+    return ApplyResult(
+        status="OK",
+        mutated_text=mutated,
+        trace={
+            "strength": strength,
+            "transform": transform,
+            "len_before": len(seed_text),
+            "len_after": len(mutated),
+        }
+    )
+>>>>>>> origin/main
