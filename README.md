@@ -1,50 +1,90 @@
-# OWASP LLM Mutation Engine
+# Root README Add-on: Quick Start and README Link Structure
 
-A mutation-based prompt transformation framework for benchmarking LLM security scanners, with an initial focus on **LLM01: Prompt Injection**.
+This document provides:
 
-## Overview
-
-This repository contains the **code-side implementation** of the Mutation Engine and its supporting pipeline for building, validating, and exporting prompt mutation inputs.
-
-The current repository focuses on:
-
-- Mutation Engine core logic
-- Operator implementations
-- LLM01-oriented seed processing scripts
-- Schema documentation
-- Batch/reporting pipelines
-- Small sample artifacts for inspection
-
-Large datasets, raw resources, and generated outputs are managed separately from the code repository.
+1. A `Quick Start` section that can be pasted into the root `README.md`
+2. A recommended reading order for new readers
+3. A link structure that connects the root README and subdirectory READMEs
 
 ---
 
-## Project Goal
+## Quick Start
 
-The goal of this project is to support a reproducible workflow like the following:
+This repository currently focuses on the **LLM01 Prompt Injection** pilot workflow.
 
-1. Prepare prompt seed data from multiple datasets
-2. Normalize and validate the seed data
-3. Convert them into mutation-ready seed records
-4. Run the Mutation Engine with selected operators
-5. Export execution input JSONL for downstream evaluation
-6. Analyze batch-level mutation and diversity results
-
-The initial pilot scope is centered on **LLM01 Prompt Injection**.
-
----
-
-## Repository Structure
+A typical workflow is:
 
 ```text
-.
-├─ schema/               # schema documentation for normalized records and mutation seeds
-├─ src/
-│  ├─ config/            # bucket definitions and enabled bucket configuration
-│  ├─ core/              # mutation engine core modules
-│  ├─ operators/         # mutation operators
-│  └─ pipelines/         # batch/report/export/smoke-test pipelines
-├─ scripts/              # preprocessing, validation, and schema inspection scripts
-├─ sample/               # small example summary artifacts
-├─ docs/                 # design notes, operator docs, policy docs, how-to docs
-└─ README.md
+sampled raw prompt data
+→ normalization
+→ prompt seed validation / merge
+→ mutation seed construction
+→ mutation seed validation
+→ batch mutation run
+→ reporting / diversity analysis
+→ execution input export
+```
+
+### 1. Review the schema documents
+
+Start by reading the schema layer to understand the expected record structures.
+
+- [`schema/README.md`](schema/README.md)
+- [`schema/normalized_v1.md`](schema/normalized_v1.md)
+- [`schema/mutation_seed_v1.md`](schema/mutation_seed_v1.md)
+
+### 2. Review the preprocessing scripts
+
+Then inspect the LLM01 preprocessing and validation scripts.
+
+- [`scripts/README.md`](scripts/README.md)
+
+These scripts support tasks such as:
+
+- normalization of sampled raw prompt data
+- prompt seed validation
+- mutation seed construction
+- mutation seed validation
+- schema inspection
+
+### 3. Review the pipeline layer
+
+Then inspect the runnable pipeline scripts.
+
+- [`src/pipelines/README.md`](src/pipelines/README.md)
+
+These scripts support tasks such as:
+
+- batch mutation runs
+- execution input export
+- registry inspection
+- batch/diversity reporting
+- operator smoke testing
+
+### 4. Inspect small example artifacts
+
+For lightweight examples of summary artifacts, see:
+
+- [`sample/README.md`](sample/README.md)
+
+### 5. Understand data handling
+
+This repository does not serve as the long-term storage location for full datasets and large generated outputs.
+
+- [`data/README.md`](data/README.md)
+
+---
+
+## Recommended Reading Order
+
+For a new reader, the recommended reading order is:
+
+1. [`README.md`](README.md)
+2. [`schema/README.md`](schema/README.md)
+3. [`schema/normalized_v1.md`](schema/normalized_v1.md)
+4. [`schema/mutation_seed_v1.md`](schema/mutation_seed_v1.md)
+5. [`scripts/README.md`](scripts/README.md)
+6. [`src/pipelines/README.md`](src/pipelines/README.md)
+7. [`sample/README.md`](sample/README.md)
+8. [`data/README.md`](data/README.md)
+
