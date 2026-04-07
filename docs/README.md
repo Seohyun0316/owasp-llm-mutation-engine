@@ -6,7 +6,7 @@
 - [Quickstart](howto/quickstart.md) — 설치/테스트/스냅샷/간단 실행
 
 ## Contracts
-- [Operator Contract v0.1](../operator_contract.md) — 연산자 메타/시그니처/trace/재현성 계약(프로젝트 루트)
+- [Operator Contract v0.1](operator_contract.md) 연산자 메타/시그니처/trace/재현성 계약(프로젝트 루트)
 
 ## Policies
 - [Validity Guard Policy (v0.1)](policies/policy_validity_guard_v0.1.md)
