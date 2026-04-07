@@ -237,8 +237,7 @@ inspect schema
 
 Large datasets, raw resources, and large generated artifacts are managed separately from this code repository.
 
-- **Data Repository Link:** `[Add link here]`
-- **Notes:** `[Optional: add a short description of what is stored in the data repository]`
+- **Data Repository Link:** [LLM01 PRompt Injection Dataset](https://github.com/ODamDam/LLM01_PromptInjection_Dataset)
 
 You can replace the placeholders above with your external data repository link and a short explanation.
 
